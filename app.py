@@ -12,6 +12,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
 from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
+from dotenv import load_dotenv
+
 
 class BibleLanguageLearningSystem:
     """
@@ -404,9 +406,13 @@ def format_lesson_display(lesson_content):
 def generate_lesson(api_key, language, level, model, progress=gr.Progress()):
     """Main function called by Gradio interface"""
     if not api_key:
-        return "⚠️ Please enter your OpenAI API key", None
+        load_dotenv()
+        api_key = os.getenv("OPENAI_API_KEY")
+        # return "⚠️ Please enter your OpenAI API key", None
     
     try:
+        # load_dotenv()
+        # api_key = os.getenv("OPENAI_API_KEY")
         system = BibleLanguageLearningSystem(
             api_key=api_key,
             target_language=language,
