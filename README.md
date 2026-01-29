@@ -14,6 +14,13 @@ license: mit
 
 An agentic AI system that creates personalized language lessons based on Bible study using OpenAI's ChatGPT.
 
+## Files
+
+**app.py** is the huggingFace code
+**app_improved.py** it is also the huggingFace code with audio using text to speech elevenlabs free api
+**test.ipynb** - is the test of the complete code including audio.
+**Agentic AI Bible and Language Study.ipynb** is the first code I created and tested.
+
 ## Features
 
 ✨ **Multi-Agent Architecture**
