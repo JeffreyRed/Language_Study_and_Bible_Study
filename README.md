@@ -17,9 +17,10 @@ An agentic AI system that creates personalized language lessons based on Bible s
 ## Files
 
 * **app.py** is the huggingFace code
-* **app_improved.py** it is also the huggingFace code with audio using text to speech elevenlabs free api
+* **app_improved.py** it is also the huggingFace code with audio using text to speech opennai
 * **test.ipynb** - is the test of the complete code including audio.
 * **Agentic AI Bible and Language Study.ipynb** is the first code I created and tested.
+* **Agents_verse_reading_speaking_writing_excercise_rolePlay_grammarLesson.ipynb** Second code with more agents and openai text-to-speech
 
 ## Features
 
@@ -28,7 +29,9 @@ An agentic AI system that creates personalized language lessons based on Bible s
 - Agent 2: Content Creator
 - Agent 3: Lesson Designer
 - Agent 4: Answer Key Generator
-- Agent 5: Text to speech Generator using Eleven app
+- Agent 5: Text to speech Generator using Eleven app - I modified one coe Agentis_verse_reading...ipynb to use openai audio
+- Agent 6: Grammar
+- Agent 7: role play
 
 📚 **Four Skill Areas**
 - Reading Comprehension
