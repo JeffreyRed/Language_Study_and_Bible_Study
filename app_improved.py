@@ -222,7 +222,8 @@ Return ONLY valid JSON with:
 - "writing_exercises": Array with "answer" and "explanation"
 - "listening_exercises": Array with "answer" and "explanation"
 - "speaking_exercises": Array with "answer" and "explanation"
-- "filling_exercises": Array with "answer" and "explanation""""
+- "filling_exercises": Array with "answer" and "explanation"
+"""
 
         user_message = (
             f"Exercises: {json.dumps(lesson_data, ensure_ascii=False)[:500]}\n"
