@@ -352,83 +352,6 @@ Return ONLY valid JSON with:
             print(f"TTS Generation Error: {str(e)}")
             return None
 
-     # ──────────────────────────────────────────
-    # Agent 8 – Role Play Audio Generator
-    # Generates two MP3s — one per character — so
-    # the learner can practise each side separately.
-    # Voices: nova (char 1) and onyx (char 2)
-    # ──────────────────────────────────────────
-
-    ROLEPLAY_VOICES = ["nova", "onyx"]
-
-    def agent_roleplay_audio(self, roleplay_data: dict, language_level: str) -> tuple:
-        """
-        Returns (audio_path_char1, audio_path_char2).
-        Each file contains only that character's lines spoken in order.
-        Either value may be None if generation fails.
-        """
-        lang_lower = self.target_language.lower()
-        dialogue   = roleplay_data.get("dialogue", [])
-        characters = roleplay_data.get("characters", [])
-
-        # Map speaker name → voice, based on characters list order
-        voice_map = {}
-        for i, char in enumerate(characters[:2]):
-            voice_map[char["name"]] = self.ROLEPLAY_VOICES[i]
-
-        # Fallback: assign by first appearance in dialogue
-        seen = []
-        for line in dialogue:
-            sp = line.get("speaker", "")
-            if sp and sp not in seen:
-                seen.append(sp)
-        for i, sp in enumerate(seen[:2]):
-            if sp not in voice_map:
-                voice_map[sp] = self.ROLEPLAY_VOICES[i % 2]
-
-        audio_paths = []
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-        for idx, (speaker_name, voice) in enumerate(list(voice_map.items())[:2]):
-            lines = [
-                line.get(f"line_{lang_lower}", "")
-                for line in dialogue
-                if line.get("speaker") == speaker_name and line.get(f"line_{lang_lower}")
-            ]
-            if not lines:
-                audio_paths.append(None)
-                continue
-
-            # Short pause between lines via ellipsis
-            script = "\n...\n".join(lines)
-
-            try:
-                fname = (
-                    f"roleplay_{self.target_language}_{language_level}"
-                    f"_char{idx+1}_{timestamp}.mp3"
-                )
-                audio_path = os.path.join(tempfile.gettempdir(), fname)
-                print(f"Role-play TTS '{speaker_name}' ({voice}): {audio_path}")
-
-                resp = self.client.audio.speech.create(
-                    model="gpt-4o-mini-tts",
-                    voice=voice,
-                    input=script,
-                    response_format="mp3",
-                )
-                with open(audio_path, "wb") as f:
-                    f.write(resp.read())
-                audio_paths.append(audio_path)
-
-            except Exception as e:
-                print(f"Role-play TTS error for '{speaker_name}': {e}")
-                audio_paths.append(None)
-
-        while len(audio_paths) < 2:
-            audio_paths.append(None)
-
-        return audio_paths[0], audio_paths[1]
-
     # ──────────────────────────────────────────
     # PDF generation
     # NOTE: Emojis removed from PDF text — ReportLab has no emoji font on HF Spaces
@@ -675,42 +598,21 @@ Return ONLY valid JSON with:
         if reading_text:
             audio_path = self.agent_tts_generator(reading_text, language_level)
 
-        print("0.90  Generating role-play audio (2 characters)...")
-        roleplay_audio_char1, roleplay_audio_char2 = self.agent_roleplay_audio(
-            roleplay_data, language_level
-        )
-
-        print("0.95  Creating PDF...")
+        print("0.93  Creating PDF...")
         lesson_content = {
-            "level":               language_level,
-            "verse_data":          verse_data,
-            "reading_data":        reading_data,
-            "lesson_data":         lesson_data,
-            "answers":             answers,
-            "grammar_data":        grammar_data,
-            "roleplay_data":       roleplay_data,
-            "audio_path":          audio_path,
-            "roleplay_audio_char1": roleplay_audio_char1,
-            "roleplay_audio_char2": roleplay_audio_char2,
+            "level":        language_level,
+            "verse_data":   verse_data,
+            "reading_data": reading_data,
+            "lesson_data":  lesson_data,
+            "answers":      answers,
+            "grammar_data": grammar_data,
+            "roleplay_data":roleplay_data,
+            "audio_path":   audio_path,
         }
-
-        # print("0.93  Creating PDF...")
-        # lesson_content = {
-        #     "level":        language_level,
-        #     "verse_data":   verse_data,
-        #     "reading_data": reading_data,
-        #     "lesson_data":  lesson_data,
-        #     "answers":      answers,
-        #     "grammar_data": grammar_data,
-        #     "roleplay_data":roleplay_data,
-        #     "audio_path":   audio_path,
-        # }
         pdf_path = self.generate_pdf(lesson_content)
 
         print("1.00  Complete!")
-        # return lesson_content, pdf_path, audio_path
-        return lesson_content, pdf_path, audio_path, roleplay_audio_char1, roleplay_audio_char2
-
+        return lesson_content, pdf_path, audio_path
 
 
 # ─────────────────────────────────────────────
@@ -857,7 +759,7 @@ def generate_lesson(api_key: str, language: str, level: str, model: str):
         load_dotenv()
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
-            return "Please enter your OpenAI API key", None, None, None, None
+            return "Please enter your OpenAI API key", None, None
 
     try:
         system = BibleLanguageLearningSystem(
@@ -865,15 +767,12 @@ def generate_lesson(api_key: str, language: str, level: str, model: str):
             target_language=language,
             model=model,
         )
-        # lesson_content, pdf_path, audio_path = system.run_full_lesson_generation(level)
-        lesson_content, pdf_path, audio_path, rp_audio_1, rp_audio_2 = system.run_full_lesson_generation(level)
+        lesson_content, pdf_path, audio_path = system.run_full_lesson_generation(level)
         display_text = format_lesson_display(lesson_content)
-        # return display_text, pdf_path, audio_path
-        return display_text, pdf_path, audio_path, rp_audio_1, rp_audio_2
+        return display_text, pdf_path, audio_path
     except Exception as e:
         import traceback
-        # return f"Error: {str(e)}\n\n{traceback.format_exc()}", None, None
-        return f"Error: {str(e)}\n\n{traceback.format_exc()}", None, None, None, None
+        return f"Error: {str(e)}\n\n{traceback.format_exc()}", None, None
 
 
 # ─────────────────────────────────────────────
@@ -882,7 +781,7 @@ def generate_lesson(api_key: str, language: str, level: str, model: str):
 # FIX: removed elevenlabs_key input — it was passed to generate_lesson but not used
 # ─────────────────────────────────────────────
 
-with gr.Blocks(title="Bible Language Learning System") as demo:
+with gr.Blocks(title="Bible Language Learning System", theme=gr.themes.Soft()) as demo:
     gr.Markdown("""
     # Bible Language Learning System
     ### Learn Languages Through Scripture with AI
@@ -957,25 +856,12 @@ with gr.Blocks(title="Bible Language Learning System") as demo:
                     label="Listening Audio",
                     type="filepath"
                 )
-            
-            gr.Markdown("### Role Play Audio")
-            gr.Markdown("Practice each character separately — listen to one side, then try to respond!")
-            with gr.Row():
-                roleplay_audio_1 = gr.Audio(
-                    label="Character 1 lines (voice: Nova)",
-                    type="filepath"
-                )
-                roleplay_audio_2 = gr.Audio(
-                    label="Character 2 lines (voice: Onyx)",
-                    type="filepath"
-                )
 
     # FIX: inputs list matches the 4 parameters of generate_lesson exactly
     generate_btn.click(
         fn=generate_lesson,
         inputs=[api_key, language, level, model],
-        # outputs=[lesson_output, pdf_output, audio_output]
-        outputs=[lesson_output, pdf_output, audio_output, roleplay_audio_1, roleplay_audio_2]
+        outputs=[lesson_output, pdf_output, audio_output]
     )
 
     gr.Markdown("""
@@ -989,4 +875,4 @@ with gr.Blocks(title="Bible Language Learning System") as demo:
     """)
 
 if __name__ == "__main__":
-    demo.launch(theme=gr.themes.Soft(), ssr_mode=False)
+    demo.launch()
